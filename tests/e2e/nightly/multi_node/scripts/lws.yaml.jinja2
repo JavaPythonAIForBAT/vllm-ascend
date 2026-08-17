@@ -45,11 +45,19 @@ spec:
                 value: {{ runner | default("linux-aarch64-a3-0") }}
               - name: VLLM_ASCEND_VERSION
                 value: {{ vllm_ascend_ref | default("main") }}
+              - name: AOP_MULTI_ENABLED
+                value: "{{ aop_multi_enabled }}"
+              - name: GOOD_TABLE
+                value: "{{ good_table | default("/root/.cache/vllm-ascend/nightly/good_table.csv") }}"
+              - name: OPENLIBING_SECRET
+                value: "{{ openlibing_secret | default("") }}"
             command:
               - sh
               - -c
               - |
-                bash /root/.cache/tests/run.sh
+                bash /root/.cache/tests/run.sh \
+                  "{{ soc_version | default("") }}" \
+                  "{{ max_good_age_days | default("3") }}"
             resources:
               limits:
                 huawei.com/ascend-1980: {{ npu_per_node | default("16") }}
@@ -116,11 +124,17 @@ spec:
                 value: {{ benchmark_job_name | default("") }}
               - name: VLLM_CI_RUNNER
                 value: {{ runner | default("linux-aarch64-a3-0") }}
+              - name: AOP_MULTI_ENABLED
+                value: "{{ aop_multi_enabled }}"
+              - name: GOOD_TABLE
+                value: "{{ good_table | default("/root/.cache/vllm-ascend/nightly/good_table.csv") }}"
             command:
               - sh
               - -c
               - |
-                bash /root/.cache/tests/run.sh
+                bash /root/.cache/tests/run.sh \
+                  "{{ soc_version | default("") }}" \
+                  "{{ max_good_age_days | default("3") }}"
             resources:
               limits:
                 huawei.com/ascend-1980: {{ npu_per_node | default("16") }}

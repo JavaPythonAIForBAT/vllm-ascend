@@ -10,7 +10,7 @@ from vllm._aiter_ops import rocm_aiter_ops
 from vllm.compilation.decorators import support_torch_compile
 from vllm.config import VllmConfig
 from vllm.distributed import get_tensor_model_parallel_rank, get_tensor_model_parallel_world_size
-from vllm.model_executor.layers.fused_moe import FusedMoE
+from vllm.model_executor.layers.fused_moe import fused_moe_make_expert_params_mapping
 from vllm.model_executor.layers.layernorm import RMSNorm
 from vllm.model_executor.layers.linear import ReplicatedLinear
 from vllm.model_executor.layers.logits_processor import LogitsProcessor
@@ -120,7 +120,12 @@ class DeepSeekMultiTokenPredictorLayer(nn.Module):
 
         hidden_states = self.e_proj(inputs_embeds).unsqueeze(-2) + self.h_proj(previous_hidden_states)
 
-        hidden_states, residual = self.mtp_block(positions=positions, hidden_states=hidden_states, residual=None)
+        hidden_states, residual = self.mtp_block(
+            positions=positions,
+            hidden_states=hidden_states,
+            residual=None,
+            input_ids=None,
+        )
 
         # hidden_states = self.hc_head(hidden_states, self.hc_head_fn,
         #                              self.hc_head_scale, self.hc_head_base)
@@ -257,7 +262,7 @@ class DeepSeekV4MTP(nn.Module, SupportsPP, DeepseekV2MixtureOfExperts):
             ("gate_up_proj", "up_proj", 1),
         ]
 
-        expert_params_mapping = FusedMoE.make_expert_params_mapping(
+        expert_params_mapping = fused_moe_make_expert_params_mapping(
             model=self.model,
             ckpt_gate_proj_name="gate_proj",
             ckpt_down_proj_name="down_proj",
